@@ -21,7 +21,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import timber.log.Timber
-
 /**
  * Create by theethawat@cnr  2020-01-17
  * */
@@ -36,34 +35,28 @@ class InfoPreview : Fragment() {
     private lateinit var infoPreviewViewModel: InfoPreviewViewModel
     private lateinit var userUUID: String
     private lateinit var userName: String
+    private val wildCardUUID :String = "dd829d6d-894d-4f02-8f9a-d076dee6bdf8"
     private val appCalculation = AppCalculation()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Firebase Timestamp Setting
         val firestore = FirebaseFirestore.getInstance()
         val settings = FirebaseFirestoreSettings.Builder()
                 .setTimestampsInSnapshotsEnabled(true)
                 .build()
         firestore.firestoreSettings(settings)
+
         setHasOptionsMenu(true)
         // Receive Argument Bundle
-        userUUID = if (arguments!!["userUUID"] != null) {
-            Timber.v("Argument UserUUID is not null")
-            (arguments?.getString("userUUID")!!)
-        } else {
-            "dd829d6d-894d-4f02-8f9a-d076dee6bdf8"//Wild Card User ID
-        }
-        userName = if (arguments!!["userName"] != null) {
-            (arguments?.getString("userName")!!)
-        } else {
-            "User Not Found"
-        }
+        processArgument(arguments!!)
         Timber.v("---========> User UUID From Google Auth is $userName with $userUUID <========-------")
     }
 
+
     override fun onStart() {
         super.onStart()
-        Timber.v("Firebase User Ready is Active !")
         infoPreviewViewModel.currentUser.observe(this, Observer { currentUser ->
             currentUser?.let {
                     ownerUser = it
@@ -72,9 +65,37 @@ class InfoPreview : Fragment() {
                     setDisplayPersonalData()
             }
         })
-        Timber.v("Health Data Observer is ended!!!")
     }
 
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
+                              savedInstanceState: Bundle?): View? {
+        // Inflate the layout for this fragment
+        Timber.v("Initial Application on View Creates")
+        application = requireNotNull(this.activity).application
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_info_preview, container, false)
+        infoPreviewViewModel = InfoPreviewViewModel(application)
+        infoPreviewViewModel.findUserFromFirestore(userUUID, userName)
+
+        // Control Handle
+        setUIBasicComponent()
+        setUIMajorButton()
+        return binding.root
+    }
+
+    private fun processArgument(arguments:Bundle){
+        userUUID = if (arguments["userUUID"] != null) {
+            Timber.v("Argument UserUUID is not null")
+            (arguments.getString("userUUID")!!)
+        } else {
+            wildCardUUID
+        }
+        userName = if (arguments["userName"] != null) {
+            (arguments.getString("userName")!!)
+        } else {
+            "User Not Found"
+        }
+    }
     override fun onCreateOptionsMenu(menu: Menu?, inflater: MenuInflater?) {
         inflater!!.inflate(R.menu.new_nav_menu,menu)
     }
@@ -94,24 +115,6 @@ class InfoPreview : Fragment() {
             else -> super.onOptionsItemSelected(item)
         }
     }
-
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
-        // Inflate the layout for this fragment
-        Timber.v("Initial Application on View Creates")
-        application = requireNotNull(this.activity).application
-        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_info_preview, container, false)
-        Timber.v("Call Application ViewModel")
-        infoPreviewViewModel = InfoPreviewViewModel(application)
-        infoPreviewViewModel.findUserFromFirestore(userUUID, userName)
-
-        // Control Handle
-        setUIBasicComponent()
-        setUIMajorButton()
-        return binding.root
-    }
-
     private fun checkIfPersonalDataInitiate() {
         // To Check Weather birth day and birth month is 0 that it can't happen in real life
         // Save this for show that user has not initial his data to move to edit data page
