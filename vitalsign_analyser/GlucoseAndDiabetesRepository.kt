@@ -45,11 +45,15 @@ class GlucoseAndDiabetesRepository(val glucose: Int, val systolic: Int, val dias
     }
 
     private fun getHTRisk(){
-        diabetesHTRisk = if (systolic == 0) {
+        if (systolic == 0) {
             Timber.v("Systolic is 0")
-            RiskLevel.UNKNOWN
+            diabetesHTRisk =  RiskLevel.UNKNOWN
         } else {
-            bloodPressureAnalyse.getYourDataRisk(systolic)
+            bloodPressureAnalyse.riskLevelExport.observeForever{htRisk->
+                htRisk?.let {
+                    diabetesHTRisk = it
+                }
+            }
         }
         Timber.v("In Get Hypertension Risk Running")
         Timber.v("Add Data For Systolic $systolic")
@@ -65,7 +69,12 @@ class GlucoseAndDiabetesRepository(val glucose: Int, val systolic: Int, val dias
 
     private fun mainAnalyze() {
         Timber.v("Diabetes Risk Analysis is now Runnning")
-        diabetesRisk = glucoseRiskAnalyse.getYourDataRisk(glucose)
+        glucoseRiskAnalyse.getYourDataRisk(glucose)
+        glucoseRiskAnalyse.riskLevelExport.observeForever { glucoseRisk->
+            glucoseRisk?.let {
+                diabetesRisk = it
+            }
+        }
         diabetesRisk = addHTForDiabetes(diabetesHTRisk)
 
         inputDiabetesRiskIndication = if(diabetes){

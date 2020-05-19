@@ -120,7 +120,7 @@ class EditPersonalDataFragment :Fragment(){
                 binding.epdName.text = personalData.displayName
                 binding.epdWeight.setText(personalData.weight.toString())
                 binding.epdHeight.setText(personalData.height.toString())
-                datePicker.updateDate(personalData.bYear,personalData.bMonth,personalData.bDay)
+                datePicker.updateDate(personalData.bYear,personalData.bMonth - 1,personalData.bDay)
             }
         })
     }

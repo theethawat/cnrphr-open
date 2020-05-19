@@ -23,6 +23,7 @@ class VitalSignRisk(private val dataType: VitalsignDataType,
     private val coroutineJob = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + coroutineJob)
     val riskLevelLiveData = MutableLiveData<RiskLevelTemplate>()
+    val riskLevelExport = MutableLiveData<RiskLevel>()
 
     // Firebase Firestore
     private val firebaseFirestore = FirebaseFirestore.getInstance()
@@ -39,14 +40,21 @@ class VitalSignRisk(private val dataType: VitalsignDataType,
         riskLevel = riskLevelLiveData.value!!
     }
 
-    fun getYourDataRisk(latestValue: Int):RiskLevel{
-        riskLevelLiveData.observeForever { riskLevelPrepareUpdate ->
-            riskLevelPrepareUpdate?.let { riskLevelNewData->
-                riskLevel = riskLevelNewData
-            }
-        }
 
-        Timber.v("****************************")
+    fun getYourDataRisk(latestValue: Int){
+        riskLevelLiveData.observeForever { riskLevelPrepareUpdate ->
+                riskLevelPrepareUpdate?.let { riskLevelNewData->
+                    riskLevel = riskLevelNewData
+                    Timber.v("Risk Level Update!!!!")
+                    riskLevelExport.value = returnCurrentDataRisk(latestValue)
+                    Timber.v("Data Send To Fragment")
+                }
+            }
+    }
+
+    // Private Function
+
+    private fun returnCurrentDataRisk(latestValue: Int):RiskLevel{
         return if(latestValue >= riskLevel.safeMin && latestValue <= riskLevel.safeMax){
             Timber.v("****************************************")
             Timber.v("Got Value $latestValue return Safe")
@@ -71,9 +79,8 @@ class VitalSignRisk(private val dataType: VitalsignDataType,
             Timber.v("Safe margin ${riskLevel.dangerMin} to ${riskLevel.dangerMax}")
             RiskLevel.UNKNOWN
         }
-
     }
-    // Private Function
+
     private suspend fun getVitalSignRiskLevel(pressureSpecialType: BloodPressureDataType) {
         val firestoreRef = firebaseFirestore.collection("vitalsign_analyze")
                 .document(getDocumentLabel(dataType, pressureSpecialType))
@@ -107,6 +114,9 @@ class VitalSignRisk(private val dataType: VitalsignDataType,
         val danger: HashMap<String, Int> = snapshot["danger"] as HashMap<String, Int>
         val risk: HashMap<String, Int> = snapshot["risk"] as HashMap<String, Int>
         val safe: HashMap<String, Int> = snapshot["safe"] as HashMap<String, Int>
+//        Timber.v(snapshot["danger"].toString())
+//        Timber.v(snapshot["risk"].toString())
+//        Timber.v(snapshot["safe"].toString())
         tempOtherRiskLevel = RiskLevelTemplate(
                 safeMin = safe["min"]!!,
                 safeMax = safe["max"]!!,

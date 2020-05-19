@@ -79,23 +79,35 @@ class AnalysisTabFragment : Fragment() {
     /************* ViewModel Observer ************************/
     private fun runLatestFetchObserver() {
         viewModel.firstValue.observe(viewLifecycleOwner, Observer { vitalSignValue ->
-            vitalSignValue?.let {
-                firstValue = it
+            vitalSignValue?.let { vitalSingValue ->
+                firstValue = vitalSingValue
                 binding.valueFirst.text = firstValue.toString()
-                firstValueRisk = riskAnalysis1.getYourDataRisk(firstValue)
-                viewModel.getDataAdvice(firstValueRisk)
-                observeDataAdvice()
+                riskAnalysis1.getYourDataRisk(firstValue)
+                riskAnalysis1.riskLevelExport.observeForever { valueRisk->
+                    valueRisk?.let {
+                        firstValueRisk = it
+                        viewModel.getDataAdvice(firstValueRisk)
+                        observeDataAdvice()
+                    }
+                }
             }
         })
 
         if (requestDataType == VitalsignDataType.BLOOD_PRESSURE) {
             viewModel.secondValue.observe(viewLifecycleOwner, Observer { vitalSignValue ->
-                vitalSignValue?.let {
-                    secondValue = it
+                vitalSignValue?.let {vitalSignSecondValue->
+                    secondValue = vitalSignSecondValue
                     binding.valueSecond.text = secondValue.toString()
-                    secondValueRisk = riskAnalysis2!!.getYourDataRisk(secondValue)
+                    riskAnalysis2!!.getYourDataRisk(secondValue)
+                    riskAnalysis2!!.riskLevelExport.observeForever { valueRisk->
+                        valueRisk?.let {
+                            secondValueRisk = it
+                        }
+                    }
                 }
             })
+
+
         } else {
             binding.valueSecond.visibility = View.INVISIBLE
             binding.valueSlash.visibility = View.INVISIBLE

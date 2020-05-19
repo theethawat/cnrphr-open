@@ -42,9 +42,9 @@ class EditPersonalDataViewModel(application: Application) : AndroidViewModel(app
                                 healthDataOnCoroutines = FirebaseUser(
                                         uuid = document.data["uuid"].toString(),
                                         displayName = document.data["displayName"].toString(),
-                                        bDay =  toIntOrZero(document.data["birthDate"].toString()),
-                                        bMonth = toIntOrZero( document.data["birthMonth"].toString()),
-                                        bYear =  toIntOrZero(document.data["birthYear"].toString()),
+                                        bDay =  toIntOrZero(document.data["bday"].toString()),
+                                        bMonth = toIntOrZero( document.data["bmonth"].toString()),
+                                        bYear =  toIntOrZero(document.data["byear"].toString()),
                                         height = toFloatOrZero(document.data["height"].toString()),
                                         weight = toFloatOrZero(document.data["weight"].toString())
                                 )
