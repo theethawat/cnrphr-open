@@ -79,44 +79,61 @@ class MonitorMainFragment : Fragment() {
         super.onCreateView(inflater, container, savedInstanceState)
         application = requireNotNull(this.activity).application
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_monitor_main, container, false)
-
-        //Element
         viewModelFactory = MonitorViewModelFactory(requestDataType, userUUID, application)
         viewModel = getViewModelFromFactory(viewModelFactory)
         binding.monitorToolbar.title = requestDataType.thaiName
         binding.monitorToolbar.setTitleTextColor(WHITE)
 
-        /*****************  SETTING DATA METHOD  *********************/
-        //Patient or User Working, Observer MutableLiveData
-        (viewModel as MonitorMainViewModel).allData.observe(viewLifecycleOwner, Observer { dataList ->
-            dataList?.let {
-                tempDataList = dataList as ArrayList<DeviceRoomData>
-            }
-            Handler().postDelayed({
-                if (tempDataList.isNotEmpty()) {
-                    settingChart()
-                }
-            }, 2000)
-        })
+        observeGraphData()
+        // observeRiskLevelData()
+        return binding.root
+    }
 
-        /***** GETTING RISK LEVEL DATA*******************/
-        (viewModel as MonitorMainViewModel).firstSignRiskLevel.observe(viewLifecycleOwner, Observer { riskLevel ->
-            riskLevel?.let {
-                Timber.v("RiskLevelBoundary is Set !!!!")
-                riskBoundaryData = it
+    private fun observeGraphData(){
+        (viewModel as MonitorMainViewModel).readyStatus.observe(viewLifecycleOwner, Observer { ready ->
+            ready?.let {
+                if(ready == true){
+                    tempDataList = (viewModel as MonitorMainViewModel).allData.value as ArrayList<DeviceRoomData>
+                    if(requestDataType == VitalsignDataType.BLOOD_PRESSURE){
+                        riskBoundaryData = (viewModel as MonitorMainViewModel).firstSignRiskLevel.value!!
+                        bpBoundaryDiastolic =(viewModel as MonitorMainViewModel).secondSignRiskLevel.value!!
+                        settingChart()
+                    }
+                    else{
+                        riskBoundaryData = (viewModel as MonitorMainViewModel).firstSignRiskLevel.value!!
+                        settingChart()
+                    }
+                }
             }
+//            Handler().postDelayed({
+//                if (tempDataList.isNotEmpty()) {
+//                    settingChart()
+//                }
+//            }, 2000)
         })
+    }
+
+    // Spare function
+    private fun observeRiskLevelData(){
+        /***** GETTING RISK LEVEL DATA*******************/
         if (requestDataType == VitalsignDataType.BLOOD_PRESSURE) {
-            // the first Sign Risk Level is for systolic and this for diastolic
             (viewModel as MonitorMainViewModel).secondSignRiskLevel.observe(viewLifecycleOwner, Observer { riskLevel ->
                 riskLevel?.let {
-                    Timber.v("RiskLevelBoundary Diastolic is Set !!!!")
+                    riskBoundaryData = (viewModel as MonitorMainViewModel).firstSignRiskLevel.value!!
                     bpBoundaryDiastolic = it
+                    settingChart()
                 }
             })
         }
-
-        return binding.root
+        else{
+            (viewModel as MonitorMainViewModel).firstSignRiskLevel.observe(viewLifecycleOwner, Observer { riskLevel ->
+                riskLevel?.let {
+                    Timber.v("RiskLevelBoundary is Set !!!!")
+                    riskBoundaryData = it
+                    settingChart()
+                }
+            })
+        }
     }
 
     private fun settingChart() {
@@ -134,7 +151,6 @@ class MonitorMainFragment : Fragment() {
         chart.setDrawGridBackground(false)
         chart.setDrawBorders(false)
         chart.description.isEnabled = false
-
         chart.invalidate()
     }
 
@@ -239,8 +255,6 @@ class MonitorMainFragment : Fragment() {
         }
 
         //Setting Graph Configuration
-
-
         firstDataSet.mode = LineDataSet.Mode.LINEAR
         firstDataSet.setCircleColor(Color.MAGENTA)
         firstDataSet.lineWidth = 2F

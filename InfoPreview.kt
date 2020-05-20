@@ -232,7 +232,6 @@ class InfoPreview : Fragment() {
         binding.userWeight.text = ownerUser!!.weight.toString()
         binding.userAge.text = appCalculation.calculateAge(ownerUser!!.bDay, ownerUser!!.bMonth, ownerUser!!.bYear).toString()
         binding.userWeightResult.text = appCalculation.calculateBMI(ownerUser!!.weight, ownerUser!!.height).thaiName
-
     }
 
     private fun setViewVisibility() {

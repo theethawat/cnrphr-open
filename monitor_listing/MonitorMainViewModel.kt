@@ -19,14 +19,16 @@ import timber.log.Timber
 class MonitorMainViewModel(private val userVitalSignType: VitalsignDataType, private val userUUID: String, application: Application) : AndroidViewModel(application) {
     private var viewModelJob = Job()
     val app = application
-    var allData = MutableLiveData<List<DeviceRoomData>>()
     private var uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
     private val repository = MonitorMainRepository(userVitalSignType)
 
     private lateinit  var firstRiskCalculator:VitalSignRisk
     private lateinit var secondRiskCalculator:VitalSignRisk
+
+    var allData = MutableLiveData<List<DeviceRoomData>>()
     val firstSignRiskLevel = MutableLiveData<RiskLevelTemplate>()
     val secondSignRiskLevel = MutableLiveData<RiskLevelTemplate>()
+    val readyStatus = MutableLiveData<Boolean>()
     private lateinit var firebaseThisDataRef: Query
 
     init {
@@ -38,16 +40,31 @@ class MonitorMainViewModel(private val userVitalSignType: VitalsignDataType, pri
             firstRiskCalculator = VitalSignRisk(userVitalSignType)
         }
         getData()
+        observeDataFetching()
+    }
 
-        // Observer
+    private fun observeDataFetching(){
         repository.vitalSignDataList.observeForever {dataList->
             dataList?.let {
                 allData.value = it
+                if(userVitalSignType == VitalsignDataType.BLOOD_PRESSURE){
+                    if(firstSignRiskLevel.value != null && secondSignRiskLevel.value != null){
+                        readyStatus.value = true
+                    }
+                }
+                else{
+                    if(firstSignRiskLevel.value != null)
+                        readyStatus.value = true
+                }
             }
         }
+
         firstRiskCalculator.riskLevelLiveData.observeForever { observer->
             observer?.let {
                 firstSignRiskLevel.value = it
+                if(allData.value != null){
+                    readyStatus.value = true
+                }
             }
         }
 
@@ -55,9 +72,14 @@ class MonitorMainViewModel(private val userVitalSignType: VitalsignDataType, pri
             secondRiskCalculator.riskLevelLiveData.observeForever { observer->
                 observer?.let {
                     secondSignRiskLevel.value = it
+                    if(firstSignRiskLevel.value != null && allData.value != null){
+                        readyStatus.value = true
+                    }
                 }
             }
         }
+
+
 
     }
 
