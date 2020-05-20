@@ -47,26 +47,12 @@ class InfoPreview : Fragment() {
                 .setTimestampsInSnapshotsEnabled(true)
                 .build()
         firestore.firestoreSettings(settings)
-
         setHasOptionsMenu(true)
+
         // Receive Argument Bundle
         processArgument(arguments!!)
         Timber.v("---========> User UUID From Google Auth is $userName with $userUUID <========-------")
     }
-
-
-    override fun onStart() {
-        super.onStart()
-        infoPreviewViewModel.currentUser.observe(this, Observer { currentUser ->
-            currentUser?.let {
-                    ownerUser = it
-                    Timber.v("Owner User is Ready $ownerUser")
-                    getUserVitalSignDataDisplay()
-                    setDisplayPersonalData()
-            }
-        })
-    }
-
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -74,13 +60,47 @@ class InfoPreview : Fragment() {
         Timber.v("Initial Application on View Creates")
         application = requireNotNull(this.activity).application
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_info_preview, container, false)
-        infoPreviewViewModel = InfoPreviewViewModel(application)
-        infoPreviewViewModel.findUserFromFirestore(userUUID, userName)
+        infoPreviewViewModel = InfoPreviewViewModel(userUUID,userName, application)
+        infoPreviewViewModel.findUserFromFirestore()
 
         // Control Handle
         setUIBasicComponent()
         setUIMajorButton()
         return binding.root
+    }
+
+
+    override fun onStart() {
+        super.onStart()
+        infoPreviewViewModel.currentUserCoruetines.observe(this, Observer { currentUser ->
+            currentUser?.let {
+                    ownerUser = it
+                    Timber.v("Owner User is Ready $ownerUser")
+                    getUserVitalSignDataDisplay()
+                    checkIfPersonalDataInitiate()
+            }
+        })
+    }
+
+
+    private fun getUserVitalSignDataDisplay() {
+        Timber.v("Get UserVitalSignDataDisplay has Called on Fragment ")
+        infoPreviewViewModel.userVitalSignList.observe(this, Observer { personalList ->
+            personalList?.let { personalData ->
+                binding.valueDiastolic.text = personalData.diastolic.toString()
+                binding.valueSystolic.text = personalData.systolic.toString()
+                binding.valueGlucose.text = personalData.glucose.toString()
+                binding.valueSpo2.text = personalData.spo2.toString()
+                binding.valueHeartrate.text = personalData.heartRate.toString()
+            }
+        })
+        infoPreviewViewModel.userObesityDescribe.observe(this, Observer { personalObesity ->
+            personalObesity?.let {
+                binding.userWeightDescribe.text = personalObesity
+                setViewVisibility()
+                setDisplayPersonalData()
+            }
+        })
     }
 
     private fun processArgument(arguments:Bundle){
@@ -96,6 +116,7 @@ class InfoPreview : Fragment() {
             "User Not Found"
         }
     }
+
     override fun onCreateOptionsMenu(menu: Menu?, inflater: MenuInflater?) {
         inflater!!.inflate(R.menu.new_nav_menu,menu)
     }
@@ -126,6 +147,7 @@ class InfoPreview : Fragment() {
         }
     }
 
+
     private fun setUIMajorButton() {
         var bundle: Bundle
         binding.btMeasure.setOnClickListener {
@@ -147,7 +169,6 @@ class InfoPreview : Fragment() {
             binding.appEditProfile.findNavController().navigate(R.id.action_infoPreview_to_editPersonalDataFragment, bundle)
         }
     }
-
 
     private fun logoutFirestore(){
                 FirebaseAuth.getInstance().signOut()
@@ -203,26 +224,7 @@ class InfoPreview : Fragment() {
         }
     }
 
-    private fun getUserVitalSignDataDisplay() {
-        Timber.v("Get UserVitalSignDataDisplay has Called on Fragment ")
-        infoPreviewViewModel.getUserInformation(ownerUser!!.inputProgramUser!!)
-        infoPreviewViewModel.getObesityInformation(appCalculation.calculateBMI(ownerUser!!.weight, ownerUser!!.height))
-        infoPreviewViewModel.userVitalSignList.observe(this, Observer { personalList ->
-            personalList?.let { personalData ->
-                binding.valueDiastolic.text = personalData.diastolic.toString()
-                binding.valueSystolic.text = personalData.systolic.toString()
-                binding.valueGlucose.text = personalData.glucose.toString()
-                binding.valueSpo2.text = personalData.spo2.toString()
-                binding.valueHeartrate.text = personalData.heartRate.toString()
-            }
-        })
-        infoPreviewViewModel.userObesityDescribe.observe(this, Observer { personalObesity ->
-            personalObesity?.let {
-                binding.userWeightDescribe.text = personalObesity
-                setViewVisibility()
-            }
-        })
-    }
+
 
     private fun setDisplayPersonalData() {
         binding.userName.text = ownerUser!!.displayName
@@ -230,7 +232,7 @@ class InfoPreview : Fragment() {
         binding.userWeight.text = ownerUser!!.weight.toString()
         binding.userAge.text = appCalculation.calculateAge(ownerUser!!.bDay, ownerUser!!.bMonth, ownerUser!!.bYear).toString()
         binding.userWeightResult.text = appCalculation.calculateBMI(ownerUser!!.weight, ownerUser!!.height).thaiName
-        checkIfPersonalDataInitiate()
+
     }
 
     private fun setViewVisibility() {
