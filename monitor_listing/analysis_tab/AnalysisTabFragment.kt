@@ -30,8 +30,6 @@ class AnalysisTabFragment : Fragment() {
     private lateinit var requestDataType: VitalsignDataType
     private lateinit var userUUID: String
     private lateinit var viewModel: AnalysisTabViewModel
-    private lateinit var riskAnalysis1: VitalSignRisk
-    private var riskAnalysis2: VitalSignRisk? = null
     private var firstValue = 0
     private var firstValueRisk = RiskLevel.SAFE
     private val colorTool = RiskColor()
@@ -45,12 +43,7 @@ class AnalysisTabFragment : Fragment() {
         requestDataType = getVitalSignDataType(requestDataTypeString)
         userUUID = arguments?.getString("inputUUID")!!
         Timber.v("Analysis Fragment Enter $requestDataType & UserUUID $userUUID")
-        if (requestDataType == VitalsignDataType.BLOOD_PRESSURE) {
-            riskAnalysis1 = VitalSignRisk(requestDataType, BloodPressureDataType.SYSTOLIC)
-            riskAnalysis2 = VitalSignRisk(requestDataType, BloodPressureDataType.DIASTOLIC)
-        } else {
-            riskAnalysis1 = VitalSignRisk(requestDataType)
-        }
+
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

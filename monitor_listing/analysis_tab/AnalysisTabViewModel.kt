@@ -5,7 +5,9 @@ import android.arch.lifecycle.AndroidViewModel
 import android.arch.lifecycle.MutableLiveData
 import com.cnr.phr_android.base.user.VitalsignDataType
 import com.cnr.phr_android.dashboard.monitor.disease.DiseaseMonitorRepository
+import com.cnr.phr_android.dashboard.monitor.disease.VitalSignRisk
 import com.cnr.phr_android.dashboard.monitor.utility.AppCalculation
+import com.cnr.phr_android.dashboard.monitor.utility.entity.BloodPressureDataType
 import com.cnr.phr_android.dashboard.monitor.utility.entity.RiskIndication
 import com.cnr.phr_android.dashboard.monitor.utility.entity.RiskLevel
 import com.cnr.phr_android.dashboard.monitor.utility.entity.Sex
@@ -28,6 +30,10 @@ class AnalysisTabViewModel(val dataType: VitalsignDataType, val userUUID: String
     private val monitorRepository = DiseaseMonitorRepository()
     private val adviceRepository = VitalsignAdviceRepository()
     private val appCalculation = AppCalculation()
+    private lateinit var riskAnalysis1:VitalSignRisk
+    private lateinit var riskAnalysis2:VitalSignRisk
+    private var riskLevelOf1:RiskLevel? = null
+    private var riskLevelOf2:RiskLevel? = null
     private lateinit var adviceSet: AdviceDataSet
     private lateinit var userPersonalData: com.cnr.phr_android.data.user.FirebaseUser
 
@@ -46,10 +52,49 @@ class AnalysisTabViewModel(val dataType: VitalsignDataType, val userUUID: String
     private var sex = Sex.TBA
 
     init {
+        initialRiskAnalysis()
         fetchLatestValueInDataType()
         observeVitalSignData()
         populatePersonalData()
         observePersonalData()
+    }
+
+    private fun initialRiskAnalysis(){
+        if (dataType == VitalsignDataType.BLOOD_PRESSURE) {
+            riskAnalysis1 = VitalSignRisk(dataType, BloodPressureDataType.SYSTOLIC)
+            riskAnalysis2 = VitalSignRisk(dataType, BloodPressureDataType.DIASTOLIC)
+        } else {
+            riskAnalysis1 = VitalSignRisk(dataType)
+        }
+    }
+
+    private fun observeRiskLevel(){
+        Timber.v("Observe Risk Level Data ")
+        if(dataType == VitalsignDataType.BLOOD_PRESSURE){
+            Timber.v("Observe Available for Blood Pressure")
+            riskAnalysis1.riskLevelExport.observeForever { riskLevel->
+                riskLevel?.let{
+                    riskLevelOf1 = it
+                    getDataAdvice(it)
+                }
+            }
+            riskAnalysis2.riskLevelExport.observeForever { riskLevel->
+                riskLevel?.let{
+                    riskLevelOf2 = it
+                    getDataAdvice(it)
+                }
+            }
+        }
+        else{
+            Timber.v("Observe Available for Data that's not Blood Pressure ")
+            riskAnalysis1.riskLevelExport.observeForever { riskLevel->
+                riskLevel?.let{
+                    riskLevelOf1 = it
+                    getDataAdvice(it)
+                }
+            }
+        }
+        Timber.v("Success Observe Data From VitalSignRisk")
     }
 
 
@@ -86,6 +131,7 @@ class AnalysisTabViewModel(val dataType: VitalsignDataType, val userUUID: String
         } else {
             observeDoubleData()
         }
+        observeRiskLevel()
     }
 
     private fun observeSingleData() {
@@ -98,6 +144,7 @@ class AnalysisTabViewModel(val dataType: VitalsignDataType, val userUUID: String
         vitalSignObserver.observeForever { dataValue ->
             dataValue?.let {
                 firstValue.value = it
+                riskAnalysis1.getYourDataRisk(it)
             }
         }
     }
@@ -106,11 +153,13 @@ class AnalysisTabViewModel(val dataType: VitalsignDataType, val userUUID: String
         monitorRepository.systolic.observeForever { systolic ->
             systolic?.let {
                 firstValue.value = it
+                riskAnalysis1.getYourDataRisk(it)
             }
         }
         monitorRepository.diastolic.observeForever { diastolic ->
             diastolic?.let {
                 secondValue.value = it
+                riskAnalysis2.getYourDataRisk(it)
             }
         }
     }
