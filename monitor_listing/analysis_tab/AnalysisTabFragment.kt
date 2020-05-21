@@ -50,7 +50,7 @@ class AnalysisTabFragment : Fragment() {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_monitor_analysis, container, false)
         viewModel = AnalysisTabViewModel(requestDataType, userUUID, Application())
         disableNHESCard()
-        runLatestFetchObserver()
+        observeDataAdvice()
         getDataUnit()
         observePopulationRanger()
         observeSpecificAnalysis()
@@ -69,55 +69,28 @@ class AnalysisTabFragment : Fragment() {
         }
     }
 
-    /************* ViewModel Observer ************************/
-    private fun runLatestFetchObserver() {
-        viewModel.firstValue.observe(viewLifecycleOwner, Observer { vitalSignValue ->
-            vitalSignValue?.let { vitalSingValue ->
-                firstValue = vitalSingValue
-                binding.valueFirst.text = firstValue.toString()
-                riskAnalysis1.getYourDataRisk(firstValue)
-                riskAnalysis1.riskLevelExport.observeForever { valueRisk->
-                    valueRisk?.let {
-                        firstValueRisk = it
-                        viewModel.getDataAdvice(firstValueRisk)
-                        observeDataAdvice()
-                    }
-                }
-            }
-        })
-
-        if (requestDataType == VitalsignDataType.BLOOD_PRESSURE) {
-            viewModel.secondValue.observe(viewLifecycleOwner, Observer { vitalSignValue ->
-                vitalSignValue?.let {vitalSignSecondValue->
-                    secondValue = vitalSignSecondValue
-                    binding.valueSecond.text = secondValue.toString()
-                    riskAnalysis2!!.getYourDataRisk(secondValue)
-                    riskAnalysis2!!.riskLevelExport.observeForever { valueRisk->
-                        valueRisk?.let {
-                            secondValueRisk = it
-                        }
-                    }
-                }
-            })
-
-
-        } else {
-            binding.valueSecond.visibility = View.INVISIBLE
-            binding.valueSlash.visibility = View.INVISIBLE
-            binding.valueRiskLevel2.visibility = View.INVISIBLE
-            binding.valueSlash2.visibility = View.INVISIBLE
-        }
-    }
 
     private fun observeDataAdvice() {
         viewModel.dataAdvice.observe(viewLifecycleOwner, Observer { advice ->
             advice?.let {
+                firstValue = viewModel.firstValue.value!!
+                firstValueRisk = viewModel.riskLevelOf1!!
                 binding.valueRiskDescribe.text = it
                 binding.valueRiskLevel.text = firstValueRisk.thaiLabel
+                binding.valueFirst.text = firstValue.toString()
                 binding.valueRiskLevel.setTextColor(colorTool.getRiskColor(firstValueRisk))
                 if(requestDataType == VitalsignDataType.BLOOD_PRESSURE){
+                    secondValue = viewModel.secondValue.value!!
+                    secondValueRisk = viewModel.riskLevelOf2!!
                     binding.valueRiskLevel2.text = secondValueRisk.thaiLabel
                     binding.valueRiskLevel2.setTextColor(colorTool.getRiskColor(secondValueRisk))
+                    binding.valueSecond.text = secondValue.toString()
+                }
+                else{
+                    binding.valueSecond.visibility = View.INVISIBLE
+                    binding.valueSlash.visibility = View.INVISIBLE
+                    binding.valueRiskLevel2.visibility = View.INVISIBLE
+                    binding.valueSlash2.visibility = View.INVISIBLE
                 }
             }
         })

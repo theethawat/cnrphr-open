@@ -32,8 +32,8 @@ class AnalysisTabViewModel(val dataType: VitalsignDataType, val userUUID: String
     private val appCalculation = AppCalculation()
     private lateinit var riskAnalysis1:VitalSignRisk
     private lateinit var riskAnalysis2:VitalSignRisk
-    private var riskLevelOf1:RiskLevel? = null
-    private var riskLevelOf2:RiskLevel? = null
+     var riskLevelOf1:RiskLevel? = null
+     var riskLevelOf2:RiskLevel? = null
     private lateinit var adviceSet: AdviceDataSet
     private lateinit var userPersonalData: com.cnr.phr_android.data.user.FirebaseUser
 
