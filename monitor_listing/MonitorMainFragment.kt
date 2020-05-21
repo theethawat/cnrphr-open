@@ -92,6 +92,7 @@ class MonitorMainFragment : Fragment() {
     private fun observeGraphData(){
         (viewModel as MonitorMainViewModel).readyStatus.observe(viewLifecycleOwner, Observer { ready ->
             ready?.let {
+                Timber.v("Ready is not null")
                 if(ready == true){
                     tempDataList = (viewModel as MonitorMainViewModel).allData.value as ArrayList<DeviceRoomData>
                     Timber.v("On Observer Data Observed!!!")
@@ -138,6 +139,7 @@ class MonitorMainFragment : Fragment() {
     }
 
     private fun settingChart() {
+        Timber.v("--------------Chart Setting-----------")
         val chart = binding.monitorChart
         val lineData = settingLineChart(tempDataList)
         //Axis
