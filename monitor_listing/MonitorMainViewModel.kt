@@ -46,15 +46,18 @@ class MonitorMainViewModel(private val userVitalSignType: VitalsignDataType, pri
     private fun observeDataFetching(){
         repository.vitalSignDataList.observeForever {dataList->
             dataList?.let {
+                Timber.v("Set From Observe Data Fetching")
                 allData.value = it
                 if(userVitalSignType == VitalsignDataType.BLOOD_PRESSURE){
                     if(firstSignRiskLevel.value != null && secondSignRiskLevel.value != null){
+                        Timber.v("Set Ready Status as True")
                         readyStatus.value = true
                     }
                 }
                 else{
                     if(firstSignRiskLevel.value != null)
                         readyStatus.value = true
+                    Timber.v("Set Ready Status as True")
                 }
             }
         }
@@ -62,7 +65,9 @@ class MonitorMainViewModel(private val userVitalSignType: VitalsignDataType, pri
         firstRiskCalculator.riskLevelLiveData.observeForever { observer->
             observer?.let {
                 firstSignRiskLevel.value = it
-                if(allData.value != null){
+                Timber.v("Set From FirstRiskCalculate ")
+                if(!allData.value.isNullOrEmpty()){
+                    Timber.v("Set Ready Status as True")
                     readyStatus.value = true
                 }
             }
@@ -71,8 +76,10 @@ class MonitorMainViewModel(private val userVitalSignType: VitalsignDataType, pri
         if(userVitalSignType == VitalsignDataType.BLOOD_PRESSURE){
             secondRiskCalculator.riskLevelLiveData.observeForever { observer->
                 observer?.let {
+                    Timber.v("Set From Secound Risk")
                     secondSignRiskLevel.value = it
-                    if(firstSignRiskLevel.value != null && allData.value != null){
+                    if(firstSignRiskLevel.value != null && !(allData.value.isNullOrEmpty())){
+                        Timber.v("Set Ready Status as True")
                         readyStatus.value = true
                     }
                 }

@@ -94,15 +94,16 @@ class MonitorMainFragment : Fragment() {
             ready?.let {
                 if(ready == true){
                     tempDataList = (viewModel as MonitorMainViewModel).allData.value as ArrayList<DeviceRoomData>
+                    Timber.v("On Observer Data Observed!!!")
+                    Timber.v(tempDataList.toString())
                     if(requestDataType == VitalsignDataType.BLOOD_PRESSURE){
                         riskBoundaryData = (viewModel as MonitorMainViewModel).firstSignRiskLevel.value!!
                         bpBoundaryDiastolic =(viewModel as MonitorMainViewModel).secondSignRiskLevel.value!!
-                        settingChart()
                     }
                     else{
                         riskBoundaryData = (viewModel as MonitorMainViewModel).firstSignRiskLevel.value!!
-                        settingChart()
                     }
+                    settingChart()
                 }
             }
 //            Handler().postDelayed({
