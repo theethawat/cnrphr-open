@@ -51,7 +51,7 @@ class MonitorMainRepository(private val userVitalSignType: VitalsignDataType) {
             firebaseReference
                     .get().continueWith {
                         firebaseReference
-                                .orderBy("measurementTime", Query.Direction.DESCENDING).get()
+                                .orderBy("measurementTime", Query.Direction.DESCENDING).limit(12).get()
                                 .addOnFailureListener {
                                     Timber.v("Error : $it")
                                 }
