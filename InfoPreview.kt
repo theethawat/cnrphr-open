@@ -241,7 +241,7 @@ class InfoPreview : Fragment() {
         binding.appBloodPressure.visibility = View.VISIBLE
         binding.appBloodGlucose.visibility = View.VISIBLE
         binding.appSpo2.visibility = View.VISIBLE
-        binding.cardView3.visibility = View.VISIBLE
+        binding.cardWeight.visibility = View.VISIBLE
     }
 }
 
