@@ -3,8 +3,11 @@ package com.cnr.phr_android.dashboard.monitor.monitor_listing.history_tab
 import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
 import android.arch.lifecycle.MutableLiveData
+import android.os.Build
+import android.support.annotation.RequiresApi
 import com.cnr.phr_android.base.user.VitalsignDataType
 import com.cnr.phr_android.dashboard.monitor.monitor_listing.MonitorMainRepository
+import com.cnr.phr_android.dashboard.monitor.utility.entity.TimeFilter
 import com.cnr.phr_android.data.entity.DeviceRoomData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +41,11 @@ class HistoryTabViewModel(
                 }
             }
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun requestDataFilter(filter:TimeFilter){
+        repository.filterData(filter)
     }
 
     override fun onCleared() {

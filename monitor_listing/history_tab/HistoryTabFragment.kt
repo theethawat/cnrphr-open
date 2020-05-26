@@ -1,19 +1,26 @@
 package com.cnr.phr_android.dashboard.monitor.monitor_listing.history_tab
 
+import android.app.Activity
 import android.app.Application
 import android.arch.lifecycle.Observer
 import android.databinding.DataBindingUtil
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.support.annotation.RequiresApi
 import android.support.v4.app.Fragment
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.Spinner
 import com.cnr.phr_android.R
 import com.cnr.phr_android.base.user.VitalsignDataType
 import com.cnr.phr_android.dashboard.monitor.monitor_listing.history_tab.adapter.MonitorDoubleAdapter
 import com.cnr.phr_android.dashboard.monitor.monitor_listing.history_tab.adapter.MonitorMainAdapter
+import com.cnr.phr_android.dashboard.monitor.utility.entity.TimeFilter
 import com.cnr.phr_android.databinding.FragmentMonitorHistoryBinding
 import timber.log.Timber
 
@@ -26,7 +33,7 @@ class HistoryTabFragment : Fragment() {
     private lateinit var requestDataType: VitalsignDataType
     private lateinit var userUUID: String
     private lateinit var viewModel: HistoryTabViewModel
-
+    private var timeFilter:TimeFilter = TimeFilter.ALL
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val requestDataTypeString = arguments?.getString("dataTypeString")!!
@@ -37,10 +44,54 @@ class HistoryTabFragment : Fragment() {
         viewModel = HistoryTabViewModel(userUUID, requestDataType, application)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_monitor_history, container, false)
         adapter = getDataAdapter(requestDataType)
         binding.historyRecyclerView.adapter = adapter
+        observeDataAdapter()
+        createSpinner()
+        binding.buttonReset.setOnClickListener {
+            viewModel.requestDataFilter(timeFilter)
+            observeDataAdapter()
+        }
+        return binding.root
+    }
+
+    // Spinner Inner class
+    inner class SpinnerActivity:Activity(),AdapterView.OnItemSelectedListener{
+        override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
+            timeFilter = when(pos){
+                0->TimeFilter.ALL
+                1->TimeFilter.WEEK
+                2->TimeFilter.TWO_WEEK
+                3->TimeFilter.MONTH
+                4->TimeFilter.THREE_MONTH
+                5->TimeFilter.YEAR
+                else-> TimeFilter.ALL
+            }
+        }
+
+        override fun onNothingSelected(parent: AdapterView<*>?) {
+            TODO("Not yet implemented")
+        }
+    }
+
+
+
+
+    private fun createSpinner(){
+        val spinner: Spinner = binding.spinnerFilter
+        ArrayAdapter.createFromResource(this.context!!,R.array.time_filter,android.R.layout.simple_spinner_item)
+                .also { adapter->
+                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    spinner.adapter = adapter
+                }
+        spinner.onItemSelectedListener = this.SpinnerActivity()
+    }
+
+
+    private fun observeDataAdapter(){
         viewModel.viewModelVitalSignList.observe(viewLifecycleOwner, Observer {vitalSignList->
             Timber.v("ViewModel observer is running in Fragment History")
             vitalSignList?.let {
@@ -52,15 +103,13 @@ class HistoryTabFragment : Fragment() {
                     (adapter as MonitorDoubleAdapter).healthData = it
                 }
                 Handler().postDelayed({
-                    if (vitalSignList.isNotEmpty()) {
+//                    if (vitalSignList.isNotEmpty()) {
                         adapter.notifyDataSetChanged()
-                    }
+//                    }
                 }, 2000)
             }
         })
-        return binding.root
     }
-
     private fun getDataAdapter(dataType: VitalsignDataType): RecyclerView.Adapter<*> {
         return when (dataType) {
             VitalsignDataType.BLOOD_PRESSURE -> MonitorDoubleAdapter(dataType)

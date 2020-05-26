@@ -1,21 +1,31 @@
 package com.cnr.phr_android.dashboard.monitor.monitor_listing
 
 import android.arch.lifecycle.MutableLiveData
+import android.os.Build
+import android.support.annotation.RequiresApi
 import com.cnr.phr_android.base.user.DataUnit
 import com.cnr.phr_android.base.user.VitalsignDataType
 import com.cnr.phr_android.dashboard.monitor.utility.GetDateFromFirestoreData
+import com.cnr.phr_android.dashboard.monitor.utility.entity.TimeFilter
 import com.cnr.phr_android.data.entity.*
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.*
 import timber.log.Timber
+import java.time.Instant
+import java.util.*
+import kotlin.collections.ArrayList
+import com.jakewharton.threetenabp.*
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
  * Create by theethawat@cnr - 2020-03-03
  * */
 class MonitorMainRepository(private val userVitalSignType: VitalsignDataType) {
     val vitalSignDataList = MutableLiveData<List<DeviceRoomData>>()
+    var backupVitalSignList:List<DeviceRoomData>? = null
     val uiScope = CoroutineScope(Dispatchers.Main + Job())
 
     fun populateData(firebaseReference: Query){
@@ -51,7 +61,7 @@ class MonitorMainRepository(private val userVitalSignType: VitalsignDataType) {
             firebaseReference
                     .get().continueWith {
                         firebaseReference
-                                .orderBy("measurementTime", Query.Direction.DESCENDING).limit(12).get()
+                                .orderBy("measurementTime", Query.Direction.DESCENDING).get()
                                 .addOnFailureListener {
                                     Timber.v("Error : $it")
                                 }
@@ -107,6 +117,35 @@ class MonitorMainRepository(private val userVitalSignType: VitalsignDataType) {
             else -> {
                 throw IllegalArgumentException(" Not Support Data Type") as Throwable
             }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+     fun filterData(filter:TimeFilter){
+        Timber.v("Coming on Filter Data Function")
+
+        val today = LocalDateTime.now()
+        val lastWeek = today.minusDays(7)
+        val lastTwoWeek = today.minusDays(14)
+        val lastMonth = today.minusMonths(1)
+        val lastThreeMonth = today.minusMonths(3)
+        val lastYear = today.minusYears(1)
+        if(backupVitalSignList == null){
+            backupVitalSignList = vitalSignDataList.value
+        }
+        if(!backupVitalSignList.isNullOrEmpty()){
+            val data:List<DeviceRoomData> = backupVitalSignList!!
+           val result= when(filter){
+               TimeFilter.ALL-> data
+               TimeFilter.WEEK-> data.takeWhile { it.measurementTime.after( Date.from(lastWeek.atZone(ZoneId.systemDefault()).toInstant()) )}
+               TimeFilter.TWO_WEEK-> data.takeWhile { it.measurementTime.after( Date.from(lastTwoWeek.atZone(ZoneId.systemDefault()).toInstant()) )}
+               TimeFilter.MONTH-> data.takeWhile { it.measurementTime.after( Date.from(lastMonth.atZone(ZoneId.systemDefault()).toInstant()) )}
+               TimeFilter.THREE_MONTH-> data.takeWhile { it.measurementTime.after( Date.from(lastThreeMonth.atZone(ZoneId.systemDefault()).toInstant()) )}
+               TimeFilter.YEAR-> data.takeWhile { it.measurementTime.after( Date.from(lastYear.atZone(ZoneId.systemDefault()).toInstant()) )}
+           }
+            Timber.v("Filter Output")
+            Timber.v(result.toString())
+            vitalSignDataList.value = result
         }
     }
 }
