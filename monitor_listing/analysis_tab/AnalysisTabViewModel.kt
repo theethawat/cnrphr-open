@@ -7,10 +7,7 @@ import com.cnr.phr_android.base.user.VitalsignDataType
 import com.cnr.phr_android.dashboard.monitor.disease.DiseaseMonitorRepository
 import com.cnr.phr_android.dashboard.monitor.disease.VitalSignRisk
 import com.cnr.phr_android.dashboard.monitor.utility.AppCalculation
-import com.cnr.phr_android.dashboard.monitor.utility.entity.BloodPressureDataType
-import com.cnr.phr_android.dashboard.monitor.utility.entity.RiskIndication
-import com.cnr.phr_android.dashboard.monitor.utility.entity.RiskLevel
-import com.cnr.phr_android.dashboard.monitor.utility.entity.Sex
+import com.cnr.phr_android.dashboard.monitor.utility.entity.*
 import com.cnr.phr_android.dashboard.monitor.vitalsign_analyser.BPAndHypertensionRepository
 import com.cnr.phr_android.dashboard.monitor.vitalsign_analyser.GlucoseAndDiabetesRepository
 import com.google.firebase.auth.FirebaseUser
@@ -30,6 +27,7 @@ class AnalysisTabViewModel(val dataType: VitalsignDataType, val userUUID: String
     private val monitorRepository = DiseaseMonitorRepository()
     private val adviceRepository = VitalsignAdviceRepository()
     private val appCalculation = AppCalculation()
+    private val updateRiskRepository = UpdateRiskLevelRepository()
     private lateinit var riskAnalysis1:VitalSignRisk
     private lateinit var riskAnalysis2:VitalSignRisk
      var riskLevelOf1:RiskLevel? = null
@@ -295,6 +293,7 @@ class AnalysisTabViewModel(val dataType: VitalsignDataType, val userUUID: String
                 bpAndHypertensionRepo.adviceLiveData.observeForever { advice ->
                     advice?.let {
                         diseaseIndicator = bpAndHypertensionRepo.exportRiskIndication()
+                        uiScope.launch {updateRiskRepository.updateDatabaseRiskLevel(userUUID,NCDS.HYPERTENSION,diseaseIndicator[0].dangerLevel) }
                         adviceOnDisease.value = it
                     }
                 }
@@ -308,10 +307,19 @@ class AnalysisTabViewModel(val dataType: VitalsignDataType, val userUUID: String
                 glucoseDiabetesRepo.adviceLiveData.observeForever { advice ->
                     advice?.let {
                         diseaseIndicator = glucoseDiabetesRepo.exportRiskIndication()
+                        uiScope.launch {updateRiskRepository.updateDatabaseRiskLevel(userUUID,NCDS.DIABETES,diseaseIndicator[0].dangerLevel) }
                         adviceOnDisease.value = it
                     }
                 }
             }
+
+        }
+        else if (dataType == VitalsignDataType.SPO2){
+            //TODO("To Be Update when more methodology")
+            uiScope.launch {updateRiskRepository.updateDatabaseRiskLevel(userUUID,NCDS.HYPOXIA,riskLevelOf1!!) }
+        }
+        else if (dataType == VitalsignDataType.HEART_RATE){
+            //TODO("To Be Update when more methodology")
 
         }
     }

@@ -27,7 +27,7 @@ class DiseaseMonitorRepository {
     val diastolic = MutableLiveData<Int>()
     val glucose = MutableLiveData<Int>()
     val heartRate = MutableLiveData<Int>()
-    val diseaseRiskTranslate  = DiseaseRiskTranslator()
+    private val diseaseRiskTranslate  = DiseaseRiskTranslator()
     val uiScope = CoroutineScope(Dispatchers.Main + Job())
     private val firestore = FirebaseFirestore.getInstance()
 
