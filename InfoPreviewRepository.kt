@@ -1,6 +1,7 @@
 package com.cnr.phr_android.dashboard.monitor
 
 import android.arch.lifecycle.MutableLiveData
+import com.cnr.phr_android.dashboard.monitor.utility.DiseaseRiskTranslator
 import com.cnr.phr_android.dashboard.monitor.utility.entity.Sex
 import com.cnr.phr_android.data.user.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
@@ -11,6 +12,7 @@ import timber.log.Timber
 class InfoPreviewRepository {
     val currentUser = MutableLiveData<FirebaseUser>()
     val db = FirebaseFirestore.getInstance()
+    val diseaseRiskTranslate = DiseaseRiskTranslator()
 
     suspend fun findUserInFirestoreCoroutines(userUUID: String, userName: String) {
         val userReference = db.collection("user")
@@ -46,7 +48,11 @@ class InfoPreviewRepository {
                                                             document.data?.get("user_sex").toString(),
                                                             document.data?.get("coronary").toString().toBoolean(),
                                                             document.data?.get("kidney").toString().toBoolean(),
-                                                            document.data?.get("diabetes").toString().toBoolean()
+                                                            document.data?.get("diabetes").toString().toBoolean(),
+                                                             diseaseRiskTranslate.getDiseaseRiskFromString(document.data?.get("isCoronary").toString()),
+                                                             diseaseRiskTranslate.getDiseaseRiskFromString(document.data?.get("isHypertension").toString()),
+                                                             diseaseRiskTranslate.getDiseaseRiskFromString(document.data?.get("isHypoxia").toString()),
+                                                             diseaseRiskTranslate.getDiseaseRiskFromString(document.data?.get("isDiabetes").toString())
                                                     )
                                                     currentUser.value = userFromFirestore
                                                 }
@@ -69,7 +75,11 @@ class InfoPreviewRepository {
                                             document.data["user_sex"].toString(),
                                             document.data["coronary"].toString().toBoolean(),
                                             document.data["kidney"].toString().toBoolean(),
-                                            document.data["diabetes"].toString().toBoolean()
+                                            document.data["diabetes"].toString().toBoolean(),
+                                            diseaseRiskTranslate.getDiseaseRiskFromString(document.data["isCoronary"].toString()),
+                                            diseaseRiskTranslate.getDiseaseRiskFromString(document.data["isHypertension"].toString()),
+                                            diseaseRiskTranslate.getDiseaseRiskFromString(document.data["isHypoxia"].toString()),
+                                            diseaseRiskTranslate.getDiseaseRiskFromString(document.data["isDiabetes"].toString())
                                     )
                                     //Adding Value
                                     currentUser.value = userFromFirestore
