@@ -3,6 +3,7 @@ package com.cnr.phr_android.dashboard.monitor.disease
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.Observer
 import com.cnr.phr_android.base.user.VitalsignDataType
+import com.cnr.phr_android.dashboard.monitor.utility.DiseaseRiskTranslator
 import com.cnr.phr_android.dashboard.monitor.utility.entity.VitalSignPersonalList
 import com.cnr.phr_android.data.user.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
@@ -26,7 +27,7 @@ class DiseaseMonitorRepository {
     val diastolic = MutableLiveData<Int>()
     val glucose = MutableLiveData<Int>()
     val heartRate = MutableLiveData<Int>()
-
+    private val diseaseRiskTranslate  = DiseaseRiskTranslator()
     val uiScope = CoroutineScope(Dispatchers.Main + Job())
     private val firestore = FirebaseFirestore.getInstance()
 
@@ -54,7 +55,11 @@ class DiseaseMonitorRepository {
                                     coronary = document.data["coronary"]!!.toString().toBoolean(),
                                     kidney = document.data["kidney"]!!.toString().toBoolean(),
                                     diabetes = document.data["diabetes"]!!.toString().toBoolean(),
-                                    adminStatus = document.data["adminStatus"]!!.toString().toBoolean()
+                                    adminStatus = document.data["adminStatus"]!!.toString().toBoolean(),
+                                    isCoronary = diseaseRiskTranslate.getDiseaseRiskFromString(document.data["isCoronary"]!!.toString()),
+                                    isHypertension = diseaseRiskTranslate.getDiseaseRiskFromString(document.data["isHypertension"]!!.toString()) ,
+                                    isHypoxia = diseaseRiskTranslate.getDiseaseRiskFromString(document.data["isHypoxia"]!!.toString()) ,
+                                    isDiabetes = diseaseRiskTranslate.getDiseaseRiskFromString(document.data["isDiabetes"]!!.toString())
                             )
                             coroutineUserData.value = userDataInFirestore
                         }

@@ -15,6 +15,7 @@ import android.support.v4.view.ViewPager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import com.cnr.phr_android.R
 import com.cnr.phr_android.base.user.VitalsignDataType
 import com.cnr.phr_android.dashboard.monitor.utility.entity.RiskLevelTemplate
@@ -141,7 +142,8 @@ class MonitorMainFragment : Fragment() {
     private fun settingChart() {
         Timber.v("--------------Chart Setting-----------")
         val chart = binding.monitorChart
-        val lineData = settingLineChart(tempDataList)
+        val lineData:LineData =  settingLineChart(tempDataList)
+
         //Axis
         setXAxis(chart)
         setYAxis(chart)
@@ -233,51 +235,63 @@ class MonitorMainFragment : Fragment() {
 
     // Setting Value of Data
     private fun settingLineChart(dataList: List<DeviceRoomData>): LineData {
+
         val entries = ArrayList<Entry>() // If it be Blood Pressure it will be systolic value
         val bpSupportEntries = ArrayList<Entry>()
         var index = 1
         val firstDataSet: LineDataSet
         var secondDataSet: LineDataSet? = null
         val reverseDataList = dataList.asReversed()
-        if (requestDataType == VitalsignDataType.BLOOD_PRESSURE) {
-            for (dataToGraph in reverseDataList) {
-                Timber.v("Entry add to graph")
-                entries.add(Entry(index.toFloat(), (dataToGraph as BloodPressure).systolic!!.toFloat()))
-                bpSupportEntries.add(Entry(index.toFloat(), (dataToGraph as BloodPressure).diastolic!!.toFloat()))
-                index++
-            }
-            firstDataSet = LineDataSet(entries, "Systolic")
-            secondDataSet = LineDataSet(bpSupportEntries, "Diastolic")
-        } else {
-            for (dataToGraph in reverseDataList) {
-                Timber.v("Entry add to graph")
-                entries.add(Entry(index.toFloat(), getGraphValue(dataToGraph)))
-                index++
-            }
+
+        if(dataList.isEmpty()){
+            Toast.makeText( context, "Cannot Fetch Data to graph", Toast.LENGTH_SHORT).show()
+            entries.add(Entry(index.toFloat(),0F))
             firstDataSet = LineDataSet(entries, "")
+            return  LineData(firstDataSet)
+        }
+        else{
+            if (requestDataType == VitalsignDataType.BLOOD_PRESSURE) {
+                for (dataToGraph in reverseDataList) {
+                    Timber.v("Entry add to graph")
+                    entries.add(Entry(index.toFloat(), (dataToGraph as BloodPressure).systolic!!.toFloat()))
+                    bpSupportEntries.add(Entry(index.toFloat(), (dataToGraph as BloodPressure).diastolic!!.toFloat()))
+                    index++
+                }
+                firstDataSet = LineDataSet(entries, "Systolic")
+                secondDataSet = LineDataSet(bpSupportEntries, "Diastolic")
+            } else {
+                for (dataToGraph in reverseDataList) {
+                    Timber.v("Entry add to graph")
+                    entries.add(Entry(index.toFloat(), getGraphValue(dataToGraph)))
+                    index++
+                }
+                firstDataSet = LineDataSet(entries, "")
+            }
+
+            //Setting Graph Configuration
+            firstDataSet.mode = LineDataSet.Mode.LINEAR
+            firstDataSet.setCircleColor(Color.MAGENTA)
+            firstDataSet.lineWidth = 2F
+            firstDataSet.fillColor = Color.rgb(255, 20, 147)
+            firstDataSet.fillAlpha = 128
+            firstDataSet.setDrawFilled(true)
+            firstDataSet.setColor(Color.MAGENTA, 2)
+            return if (secondDataSet != null) {
+                secondDataSet.mode = LineDataSet.Mode.LINEAR
+                secondDataSet.setCircleColor(Color.CYAN)
+                secondDataSet.lineWidth = 2F
+                secondDataSet.fillColor = Color.rgb(64, 224, 208)
+                secondDataSet.fillAlpha = 255
+                secondDataSet.setDrawFilled(true)
+                secondDataSet.setColor(Color.CYAN, 2)
+                val dataSetCombination: List<LineDataSet> = listOf(firstDataSet, secondDataSet)
+                LineData(dataSetCombination)
+            } else {
+                LineData(firstDataSet)
+            }
         }
 
-        //Setting Graph Configuration
-        firstDataSet.mode = LineDataSet.Mode.LINEAR
-        firstDataSet.setCircleColor(Color.MAGENTA)
-        firstDataSet.lineWidth = 2F
-        firstDataSet.fillColor = Color.rgb(255, 20, 147)
-        firstDataSet.fillAlpha = 128
-        firstDataSet.setDrawFilled(true)
-        firstDataSet.setColor(Color.MAGENTA, 2)
-        return if (secondDataSet != null) {
-            secondDataSet.mode = LineDataSet.Mode.LINEAR
-            secondDataSet.setCircleColor(Color.CYAN)
-            secondDataSet.lineWidth = 2F
-            secondDataSet.fillColor = Color.rgb(64, 224, 208)
-            secondDataSet.fillAlpha = 255
-            secondDataSet.setDrawFilled(true)
-            secondDataSet.setColor(Color.CYAN, 2)
-            val dataSetCombination: List<LineDataSet> = listOf(firstDataSet, secondDataSet)
-            LineData(dataSetCombination)
-        } else {
-            LineData(firstDataSet)
-        }
+
     }
 
     private fun getGraphValue(data: DeviceRoomData): Float {

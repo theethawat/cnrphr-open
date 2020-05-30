@@ -24,7 +24,6 @@ class InfoPreviewViewModel(val userUUID: String,val userName:String,application:
     private val obesityMonitor = ObesityMonitorRepository()
     private val appCalculation = AppCalculation()
     private lateinit var  diseaseMonitorRepository : DiseaseMonitorRepository
-
     fun findUserFromFirestore() {
         uiScope.launch {
             infoPreviewRepository.findUserInFirestoreCoroutines(userUUID, userName)

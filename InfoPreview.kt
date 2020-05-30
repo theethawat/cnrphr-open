@@ -6,9 +6,12 @@ import android.arch.lifecycle.Observer
 import android.content.Intent
 import android.databinding.DataBindingUtil
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.support.v4.app.Fragment
+import android.support.v4.content.res.ResourcesCompat
 import android.view.*
+import android.widget.ImageView
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import com.cnr.phr_android.R
@@ -16,11 +19,13 @@ import com.cnr.phr_android.dashboard.DashboardActivity
 import com.cnr.phr_android.dashboard.monitor.monitor_listing.invoke
 import com.cnr.phr_android.dashboard.monitor.utility.AppCalculation
 import com.cnr.phr_android.data.user.FirebaseUser
+import com.cnr.phr_android.data.user.UserDiseaseRisk
 import com.cnr.phr_android.databinding.FragmentInfoPreviewBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import timber.log.Timber
+
 /**
  * Create by theethawat@cnr  2020-01-17
  * */
@@ -35,7 +40,7 @@ class InfoPreview : Fragment() {
     private lateinit var infoPreviewViewModel: InfoPreviewViewModel
     private lateinit var userUUID: String
     private lateinit var userName: String
-    private val wildCardUUID :String = "dd829d6d-894d-4f02-8f9a-d076dee6bdf8"
+    private val wildCardUUID: String = "dd829d6d-894d-4f02-8f9a-d076dee6bdf8"
     private val appCalculation = AppCalculation()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,7 +65,7 @@ class InfoPreview : Fragment() {
         Timber.v("Initial Application on View Creates")
         application = requireNotNull(this.activity).application
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_info_preview, container, false)
-        infoPreviewViewModel = InfoPreviewViewModel(userUUID,userName, application)
+        infoPreviewViewModel = InfoPreviewViewModel(userUUID, userName, application)
         infoPreviewViewModel.findUserFromFirestore()
 
         // Control Handle
@@ -74,10 +79,10 @@ class InfoPreview : Fragment() {
         super.onStart()
         infoPreviewViewModel.currentUserCoruetines.observe(this, Observer { currentUser ->
             currentUser?.let {
-                    ownerUser = it
-                    Timber.v("Owner User is Ready $ownerUser")
-                    getUserVitalSignDataDisplay()
-                    checkIfPersonalDataInitiate()
+                ownerUser = it
+                Timber.v("Owner User is Ready $ownerUser")
+                getUserVitalSignDataDisplay()
+                checkIfPersonalDataInitiate()
             }
         })
     }
@@ -103,7 +108,7 @@ class InfoPreview : Fragment() {
         })
     }
 
-    private fun processArgument(arguments:Bundle){
+    private fun processArgument(arguments: Bundle) {
         userUUID = if (arguments["userUUID"] != null) {
             Timber.v("Argument UserUUID is not null")
             (arguments.getString("userUUID")!!)
@@ -118,16 +123,16 @@ class InfoPreview : Fragment() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?, inflater: MenuInflater?) {
-        inflater!!.inflate(R.menu.new_nav_menu,menu)
+        inflater!!.inflate(R.menu.new_nav_menu, menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        return when(item!!.itemId){
-            R.id.bt_logout->{
+        return when (item!!.itemId) {
+            R.id.bt_logout -> {
                 logoutFirestore()
                 true
             }
-            R.id.bt_edit_profile->{
+            R.id.bt_edit_profile -> {
                 val bundle = Bundle()
                 bundle.putString("userUUID", userUUID)
                 findNavController().navigate(R.id.action_infoPreview_to_editPersonalDataFragment, bundle)
@@ -136,6 +141,7 @@ class InfoPreview : Fragment() {
             else -> super.onOptionsItemSelected(item)
         }
     }
+
     private fun checkIfPersonalDataInitiate() {
         // To Check Weather birth day and birth month is 0 that it can't happen in real life
         // Save this for show that user has not initial his data to move to edit data page
@@ -170,9 +176,9 @@ class InfoPreview : Fragment() {
         }
     }
 
-    private fun logoutFirestore(){
-                FirebaseAuth.getInstance().signOut()
-                findNavController().navigate(R.id.action_infoPreview_to_traditionalLoginFragment2)
+    private fun logoutFirestore() {
+        FirebaseAuth.getInstance().signOut()
+        findNavController().navigate(R.id.action_infoPreview_to_traditionalLoginFragment2)
     }
 
     private fun setUIBasicComponent() {
@@ -192,7 +198,7 @@ class InfoPreview : Fragment() {
                     findNavController().navigate(R.id.action_infoPreview_to_editPersonalDataFragment, menuBundle)
                     true
                 }
-                else -> {
+                else -> {3
                     true
                 }
             }
@@ -225,13 +231,41 @@ class InfoPreview : Fragment() {
     }
 
 
-
     private fun setDisplayPersonalData() {
+        settingDiseaseStatus()
         binding.userName.text = ownerUser!!.displayName
         binding.userHeight.text = ownerUser!!.height.toString()
         binding.userWeight.text = ownerUser!!.weight.toString()
         binding.userAge.text = appCalculation.calculateAge(ownerUser!!.bDay, ownerUser!!.bMonth, ownerUser!!.bYear).toString()
         binding.userWeightResult.text = appCalculation.calculateBMI(ownerUser!!.weight, ownerUser!!.height).thaiName
+    }
+
+    private fun settingDiseaseStatus() {
+        val userProperties = ownerUser!!
+        selectAndSetDiseaseRiskIcon(binding.iconHypertension, userProperties.isHypertension)
+        selectAndSetDiseaseRiskIcon(binding.iconCoronary, userProperties.isCoronary)
+        selectAndSetDiseaseRiskIcon(binding.iconHypoxia, userProperties.isHypoxia)
+        selectAndSetDiseaseRiskIcon(binding.iconDiabetes, userProperties.isDiabetes)
+    }
+
+    private fun selectAndSetDiseaseRiskIcon(resource: ImageView, diseaseDangerLevel: UserDiseaseRisk) {
+        val positiveImg: Drawable = ResourcesCompat.getDrawable(this.context!!.resources, R.drawable.thumb_up_black_18dp, null)!!
+        val negativeImg: Drawable = ResourcesCompat.getDrawable(this.context!!.resources, R.drawable.thumb_down_black_18dp, null)!!
+        val warningImg: Drawable = ResourcesCompat.getDrawable(this.context!!.resources, R.drawable.icon_warning, null)!!
+        when (diseaseDangerLevel) {
+            UserDiseaseRisk.SAFE -> {
+                resource.setImageDrawable(positiveImg)
+            }
+            UserDiseaseRisk.RISK -> {
+                resource.setImageDrawable(warningImg)
+            }
+            UserDiseaseRisk.DANGER -> {
+                resource.setImageDrawable(negativeImg)
+            }
+            else -> {
+                resource.setImageDrawable(positiveImg)
+            }
+        }
     }
 
     private fun setViewVisibility() {
@@ -241,8 +275,18 @@ class InfoPreview : Fragment() {
         binding.appBloodPressure.visibility = View.VISIBLE
         binding.appBloodGlucose.visibility = View.VISIBLE
         binding.appSpo2.visibility = View.VISIBLE
-        binding.cardView3.visibility = View.VISIBLE
+        binding.cardWeight.visibility = View.VISIBLE
+        binding.cardDisease.visibility = View.VISIBLE
+        binding.iconHypertension.visibility = View.VISIBLE
+        binding.iconHypoxia.visibility = View.VISIBLE
+        binding.iconCoronary.visibility = View.VISIBLE
+        binding.iconDiabetes.visibility = View.VISIBLE
+        binding.titleHypertension.visibility = View.VISIBLE
+        binding.titleCoronary.visibility = View.VISIBLE
+        binding.titleHypoxia.visibility = View.VISIBLE
+        binding.titleDiabetes.visibility = View.VISIBLE
     }
+
 }
 
 
