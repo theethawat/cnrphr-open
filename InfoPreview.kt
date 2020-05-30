@@ -198,7 +198,7 @@ class InfoPreview : Fragment() {
                     findNavController().navigate(R.id.action_infoPreview_to_editPersonalDataFragment, menuBundle)
                     true
                 }
-                else -> {
+                else -> {3
                     true
                 }
             }
